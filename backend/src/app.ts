@@ -5,6 +5,8 @@ import cookieParser from 'cookie-parser';
 import { config } from './config/env';
 import authRoutes from './routes/authRoutes';
 import candidateRoutes from './routes/candidateRoutes';
+import recruiterRoutes from './routes/recruiterRoutes';
+import jobRoutes from './routes/jobRoutes';
 
 export const createApp = (): Application => {
   const app: Application = express();
@@ -40,6 +42,8 @@ export const createApp = (): Application => {
   // 5. Mount API Routes
   app.use(`${config.apiPrefix}/auth`, authRoutes);
   app.use(`${config.apiPrefix}/candidates`, candidateRoutes);
+  app.use(`${config.apiPrefix}/recruiters`, recruiterRoutes);
+  app.use(`${config.apiPrefix}/jobs`, jobRoutes);
 
   // 6. 404 Route Handler
   app.use('*', (req: Request, res: Response) => {
