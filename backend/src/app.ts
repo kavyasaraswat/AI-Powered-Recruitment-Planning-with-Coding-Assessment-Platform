@@ -11,6 +11,9 @@ import aiRoutes from './routes/aiRoutes';
 import assessmentRoutes from './routes/assessmentRoutes';
 import chatRoutes from './routes/chatRoutes';
 import billingRoutes from './routes/billingRoutes';
+import adminRoutes from './routes/adminRoutes';
+import notificationRoutes from './routes/notificationRoutes';
+import analyticsRoutes from './routes/analyticsRoutes';
 
 export const createApp = (): Application => {
   const app: Application = express();
@@ -52,6 +55,9 @@ export const createApp = (): Application => {
   app.use(`${config.apiPrefix}/assessments`, assessmentRoutes);
   app.use(`${config.apiPrefix}/chat`, chatRoutes);
   app.use(`${config.apiPrefix}/billing`, billingRoutes);
+  app.use(`${config.apiPrefix}/admin`, adminRoutes);
+  app.use(`${config.apiPrefix}/notifications`, notificationRoutes);
+  app.use(`${config.apiPrefix}/analytics`, analyticsRoutes);
 
   // 6. 404 Route Handler
   app.use('*', (req: Request, res: Response) => {
