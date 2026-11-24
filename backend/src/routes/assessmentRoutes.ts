@@ -7,6 +7,9 @@ import {
   submitQuestion,
   getAssessmentSubmissions,
   getSubmissionById,
+  evaluateSubmissionQuality,
+  getSubmissionCertificate,
+  verifyCertificatePublic,
 } from '../controllers/assessmentController';
 import { protect, restrictTo } from '../middleware/authMiddleware';
 
@@ -18,8 +21,17 @@ router.post('/run', protect, runCode);
 // Submit code against all test cases (public + hidden)
 router.post('/submit', protect, restrictTo('candidate', 'admin'), submitQuestion);
 
+// Public Certificate Verification
+router.post('/certificates/verify', verifyCertificatePublic);
+
 // Get submission by ID
 router.get('/submissions/:submissionId', protect, getSubmissionById);
+
+// Phase 10: Code Quality & Complexity Telemetry
+router.get('/submissions/:submissionId/evaluate', protect, evaluateSubmissionQuality);
+
+// Phase 10: Generate / Download Verified Performance Certificate
+router.get('/submissions/:submissionId/certificate', protect, getSubmissionCertificate);
 
 // Create assessment (Recruiter / Admin only)
 router.post('/', protect, restrictTo('recruiter', 'admin'), createAssessment);

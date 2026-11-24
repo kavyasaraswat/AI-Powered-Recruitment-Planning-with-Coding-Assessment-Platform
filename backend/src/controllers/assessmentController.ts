@@ -4,6 +4,7 @@ import { Assessment, IAssessmentDocument } from '../models/Assessment';
 import { Question, IQuestionDocument } from '../models/Question';
 import { Submission } from '../models/Submission';
 import { CodeExecutionService } from '../services/codeExecutionService';
+import { CodeQualityService } from '../services/codeQualityService';
 
 // Helper: slugify title
 const slugify = (text: string): string => {
@@ -447,6 +448,155 @@ export const getSubmissionById = async (req: Request, res: Response): Promise<vo
       success: false,
       error: 'ServerError',
       message: error.message || 'Failed to fetch submission details.',
+    });
+  }
+};
+
+/**
+ * Phase 10: Evaluate Code Quality, Cyclomatic Complexity & Static Metrics
+ */
+export const evaluateSubmissionQuality = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { submissionId } = req.params;
+    const submission = await Submission.findById(submissionId);
+
+    if (!submission) {
+      res.status(404).json({
+        success: false,
+        error: 'NotFound',
+        message: 'Submission not found.',
+      });
+      return;
+    }
+
+    const qualityMetrics = CodeQualityService.analyzeCodeQuality(
+      submission.sourceCode,
+      submission.language
+    );
+
+    res.status(200).json({
+      success: true,
+      submissionId: submission._id,
+      language: submission.language,
+      status: submission.status,
+      scorePercentage: submission.scorePercentage,
+      executionTimeMs: submission.executionTimeMs,
+      metrics: qualityMetrics,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: error.message || 'Failed to evaluate code quality metrics.',
+    });
+  }
+};
+
+/**
+ * Phase 10: Generate Tamper-Evident Performance Certificate
+ */
+export const getSubmissionCertificate = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { submissionId } = req.params;
+    const submission = await Submission.findById(submissionId)
+      .populate('candidateId', 'name email')
+      .populate('assessmentId', 'title passScorePercentage')
+      .populate('questionId', 'title');
+
+    if (!submission) {
+      res.status(404).json({
+        success: false,
+        error: 'NotFound',
+        message: 'Submission not found.',
+      });
+      return;
+    }
+
+    const assessment: any = submission.assessmentId;
+    const candidate: any = submission.candidateId;
+    const passThreshold = assessment?.passScorePercentage || 60;
+
+    if (submission.scorePercentage < passThreshold) {
+      res.status(400).json({
+        success: false,
+        error: 'PassingScoreNotMet',
+        message: `Score of ${submission.scorePercentage}% did not meet passing criteria of ${passThreshold}%. Certificate cannot be issued.`,
+      });
+      return;
+    }
+
+    // Run quality telemetry
+    const quality = CodeQualityService.analyzeCodeQuality(submission.sourceCode, submission.language);
+
+    const certificate = CodeQualityService.generatePerformanceCertificate(
+      candidate._id.toString(),
+      candidate.name || 'HireGenius Candidate',
+      assessment?.title || 'Advanced Technical Coding Assessment',
+      {
+        submissionId: submission._id.toString(),
+        scorePercentage: submission.scorePercentage,
+        passedTestCases: submission.passedTestCases,
+        totalTestCases: submission.totalTestCases,
+        executionTimeMs: submission.executionTimeMs,
+        qualityScore: quality.qualityScore,
+        cyclomaticComplexity: quality.cyclomaticComplexity.score,
+        maintainabilityIndex: quality.maintainabilityIndex.score,
+        timeComplexity: quality.estimatedComplexity.time,
+        spaceComplexity: quality.estimatedComplexity.space,
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      certificate,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: error.message || 'Failed to generate certificate.',
+    });
+  }
+};
+
+/**
+ * Phase 10: Public Verification Endpoint for Certificate Integrity
+ */
+export const verifyCertificatePublic = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { certificateId, candidateId, submissionId, score, timestamp, hash } = req.body;
+
+    if (!certificateId || !candidateId || !submissionId || !hash) {
+      res.status(400).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'Certificate metadata and verification hash are required.',
+      });
+      return;
+    }
+
+    const isValid = CodeQualityService.verifyCertificateHash(
+      certificateId,
+      candidateId,
+      submissionId,
+      Number(score),
+      Number(timestamp),
+      hash
+    );
+
+    res.status(200).json({
+      success: true,
+      verified: isValid,
+      certificateId,
+      message: isValid
+        ? 'Digital certificate verified as authentic and tamper-free.'
+        : 'Certificate signature failed verification or has been altered.',
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: error.message || 'Verification process encountered an error.',
     });
   }
 };
