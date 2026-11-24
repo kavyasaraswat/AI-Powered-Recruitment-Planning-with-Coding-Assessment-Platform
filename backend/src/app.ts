@@ -8,6 +8,7 @@ import candidateRoutes from './routes/candidateRoutes';
 import recruiterRoutes from './routes/recruiterRoutes';
 import jobRoutes from './routes/jobRoutes';
 import aiRoutes from './routes/aiRoutes';
+import assessmentRoutes from './routes/assessmentRoutes';
 
 export const createApp = (): Application => {
   const app: Application = express();
@@ -46,6 +47,7 @@ export const createApp = (): Application => {
   app.use(`${config.apiPrefix}/recruiters`, recruiterRoutes);
   app.use(`${config.apiPrefix}/jobs`, jobRoutes);
   app.use(`${config.apiPrefix}/ai`, aiRoutes);
+  app.use(`${config.apiPrefix}/assessments`, assessmentRoutes);
 
   // 6. 404 Route Handler
   app.use('*', (req: Request, res: Response) => {

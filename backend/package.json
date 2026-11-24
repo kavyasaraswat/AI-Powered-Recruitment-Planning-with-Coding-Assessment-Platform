@@ -12,7 +12,8 @@
     "test:candidate": "tsx src/tests/candidate_resume.test.ts",
     "test:recruiter": "tsx src/tests/recruiter_job.test.ts",
     "test:ai": "tsx src/tests/ai_matching.test.ts",
-    "test:all": "tsx src/tests/auth.test.ts && tsx src/tests/candidate_resume.test.ts && tsx src/tests/recruiter_job.test.ts && tsx src/tests/ai_matching.test.ts",
+    "test:assessment": "tsx src/tests/coding_assessment.test.ts",
+    "test:all": "tsx src/tests/auth.test.ts && tsx src/tests/candidate_resume.test.ts && tsx src/tests/recruiter_job.test.ts && tsx src/tests/ai_matching.test.ts && tsx src/tests/coding_assessment.test.ts",
     "seed": "tsx ../scripts/seedDatabase.ts"
   },
   "dependencies": {
