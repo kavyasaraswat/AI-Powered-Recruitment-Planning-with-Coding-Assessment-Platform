@@ -14,6 +14,7 @@ import billingRoutes from './routes/billingRoutes';
 import adminRoutes from './routes/adminRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
+import { apiLimiter, authLimiter, aiLimiter } from './middleware/rateLimiter';
 
 export const createApp = (): Application => {
   const app: Application = express();
@@ -46,14 +47,15 @@ export const createApp = (): Application => {
     });
   });
 
-  // 5. Mount API Routes
-  app.use(`${config.apiPrefix}/auth`, authRoutes);
+  // 5. Mount API Routes with Rate Limiting Guards
+  app.use(config.apiPrefix, apiLimiter);
+  app.use(`${config.apiPrefix}/auth`, authLimiter, authRoutes);
   app.use(`${config.apiPrefix}/candidates`, candidateRoutes);
   app.use(`${config.apiPrefix}/recruiters`, recruiterRoutes);
   app.use(`${config.apiPrefix}/jobs`, jobRoutes);
-  app.use(`${config.apiPrefix}/ai`, aiRoutes);
-  app.use(`${config.apiPrefix}/assessments`, assessmentRoutes);
-  app.use(`${config.apiPrefix}/chat`, chatRoutes);
+  app.use(`${config.apiPrefix}/ai`, aiLimiter, aiRoutes);
+  app.use(`${config.apiPrefix}/assessments`, aiLimiter, assessmentRoutes);
+  app.use(`${config.apiPrefix}/chat`, aiLimiter, chatRoutes);
   app.use(`${config.apiPrefix}/billing`, billingRoutes);
   app.use(`${config.apiPrefix}/admin`, adminRoutes);
   app.use(`${config.apiPrefix}/notifications`, notificationRoutes);
