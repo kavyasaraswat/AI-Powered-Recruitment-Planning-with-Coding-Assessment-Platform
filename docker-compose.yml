@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # 1. MongoDB Database Container
+  mongodb:
+    image: mongo:7.0-jammy
+    container_name: hiregenius-mongodb
+    restart: always
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_DATABASE: hiregenius
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - hiregenius-network
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Redis Cache Container
+  redis:
+    image: redis:7-alpine
+    container_name: hiregenius-redis
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    networks:
+      - hiregenius-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 3. Node.js Backend API Container
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hiregenius-backend
+    restart: always
+    ports:
+      - '5000:5000'
+    environment:
+      PORT: 5000
+      NODE_ENV: production
+      MONGODB_URI: mongodb://mongodb:27017/hiregenius
+      REDIS_URL: redis://redis:6379
+      CLIENT_URL: http://localhost:80
+      JWT_ACCESS_SECRET: hiregenius_prod_access_secret_token_2026_xyz
+      JWT_REFRESH_SECRET: hiregenius_prod_refresh_secret_token_2026_abc
+      COOKIE_SECRET: hiregenius_prod_cookie_secret_super_secure_key
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - uploads-data:/app/uploads
+    networks:
+      - hiregenius-network
+
+  # 4. React Vite Frontend Container
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hiregenius-frontend
+    restart: always
+    ports:
+      - '80:80'
+    depends_on:
+      - backend
+    networks:
+      - hiregenius-network
+
+volumes:
+  mongo-data:
+    driver: local
+  redis-data:
+    driver: local
+  uploads-data:
+    driver: local
+
+networks:
+  hiregenius-network:
+    driver: bridge
